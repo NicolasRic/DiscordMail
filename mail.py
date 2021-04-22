@@ -1,15 +1,15 @@
-import smtpd
 import logging
 import config
 
-class mailServer(smtpd.SMTPServer):
-    def __init__(*args, **kwargs):
-        smtpd.SMTPServer.__init__(*args, **kwargs)
-        logging.info("SMTP server running on port %s", config.smtpport)
+class mailServer:
+    async def handel_RCPT(self, server, session, envelope, address, rcpt_options):
+        envelope.rcpt_tos.append(address)
+        return '250 OK'
 
-    def process_message(self, peer, mailfrom, rcpttos, data):
-        config.emails.append(Email(mailfrom, rcpttos, data))
-        logging.info("Email recieved from %s", mailfrom)
+    async def handle_DATA(self, server, session, envelope):
+        config.emails.append(Email(envelope.mail_from, envelope.rcpt_tos, envelope.content.decode('utf8', errors='replace')))
+        logging.info("Email recieved from %s", envelope.mail_from)
+        return '250 Message accepted for delivery'
 
 class Email:
     def __init__(self, client, id, data):

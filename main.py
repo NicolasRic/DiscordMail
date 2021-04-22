@@ -1,8 +1,7 @@
 import discord
 import logging
-import threading
-import asyncore
 import asyncio
+from aiosmtpd.controller import Controller
 
 import mail
 import config
@@ -11,7 +10,6 @@ import config
 logging.basicConfig(level=logging.INFO)
 intents = discord.Intents().all()
 client = discord.Client(intents=intents)
-smtp_server = mail.mailServer((config.smtpip, config.smtpport), None, decode_data=True)
 
 # Discord bot events
 @client.event
@@ -60,10 +58,13 @@ async def sender():
 
         await asyncio.sleep(1)
 
-# Start a mail thread to recieve mail
-mailThread = threading.Thread(target=asyncore.loop, daemon=True)
-mailThread.start()
-
+# Start the sender loop
 client.loop.create_task(sender())
+
+# Start the SMTP server
+controller = Controller(mail.mailServer(), hostname=config.smtpip, port=config.smtpport)
+controller.start()
+
+# Start the discord bot
 client.run(config.discordAPIKey)
 
